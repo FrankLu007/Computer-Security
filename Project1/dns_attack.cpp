@@ -9,10 +9,10 @@
 #include <arpa/inet.h>
 
 #define DATA_SIZE 200
-#define TARGET_PORT 39463
+#define TARGET_PORT 7
 #define DNS_PORT 53
 
-const unsigned char DNS_Q[] = "\3www\6google\3com\0";
+const unsigned char DNS_Q[] = "\4nctu\2me\0";//"\4ieee\3org\0";//"\3isc\3org\0";//"\3www\6google\3com\0";
 const unsigned DNS_Q_Len = sizeof(DNS_Q);
 
 struct dns_t
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
 	memcpy(query, DNS_Q, DNS_Q_Len);
 	query += DNS_Q_Len - 1;
-	*(short *) query = htons(0x0001);
+	*(short *) query = htons(0x00FF);
 	query += 2;
 	*(short *) query = htons(0x0001);
 
