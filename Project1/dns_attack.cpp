@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 
 #define DATA_SIZE 200
-#define TARGET_PORT 7
+#define TARGET_PORT 39463
 #define DNS_PORT 53
 
 const unsigned char DNS_Q[] = "\3www\6google\3com\0";
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 
 	DNS->id = htons(0x0618);
-	DNS->flag = htons(0x0000);
+	DNS->flag = htons(0x0100);
 	DNS->que_count = htons(1);
 	DNS->ans_count = DNS->ser_count = DNS->add_count = 0;
 
