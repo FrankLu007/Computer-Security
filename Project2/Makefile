@@ -1,2 +1,2 @@
 all:
-	g++ -o worm worm.cpp
+	apt-get install sshpass
